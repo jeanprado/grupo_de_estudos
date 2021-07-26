@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Transformação de Dados</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Angélica Custódio e Jean Prado" />
+    <meta name="author" content="Grupo de Estudos - R-Ladies São Paulo" />
+    <script src="index_files/header-attrs/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Transformação de Dados
+## Capítulo 5 - R para Ciência de Dados
+### Angélica Custódio e Jean Prado
+### Grupo de Estudos - R-Ladies São Paulo
+### 4 de agosto de 2021
+
+---
+
+
+
+
+&lt;style type="text/css"&gt;
+.remark-slide-content{
+  font-size: 1.2rem;
+}
+&lt;/style&gt;
+
+
+
+## Referência
+
+.pull-left[
+
+&lt;img src="https://r4ds.hadley.nz/cover.png" width="60%" style="display: block; margin: auto;" /&gt;
+
+]
+
+.pull-right[
+
+- Livro: [R para Ciência de Dados](https://r4ds.had.co.nz/index.html)
+
+- Capítulo: [Data Transformation](https://r4ds.had.co.nz/transform.html), incluindo os verbos principais do dplyr, como:
+  - `filter()`
+  - `arrange()`
+  - `select()`
+  - `mutate()`
+  - `group_by()`
+  - `summarise()`
+  
+]
+
+---
+class: middle, center, inverse
+
+## Introdução
+
+
+---
+
+### R como uma calculadora
+
+- Podemos usar o R como uma calculadora:
+
+
+
+```r
+1 / 200 * 30
+```
+
+```
+## [1] 0.15
+```
+
+```r
+(59 + 73 + 2) / 3
+```
+
+```
+## [1] 44.66667
+```
+
+```r
+sin(pi / 2)
+```
+
+```
+## [1] 1
+```
+
+---
+
+### Criando objetos
+
+- Podemos criar objetos (e guardar resultados) usando o operador de atribuição `&lt;-`, e a estrutura a seguir:
+
+```
+nome_do_objeto &lt;- valor
+```
+.pull-left[
+Exemplo:
+
+
+```r
+x &lt;- 3 * 4
+```
+
+Podemos ver o conteúdo do objeto escrevendo o nome e executando:
+
+
+```r
+x
+```
+
+```
+## [1] 12
+```
+
+]
+
+.pull-right[
+Outra opção é criar o objeto e envolvê-lo com parênteses:
+
+
+```r
+(y &lt;- 3 * 4)
+```
+
+```
+## [1] 12
+```
+]
+
+---
+
+### Boas práticas e objetos
+
+- Atalho `Alt -` (Alt e menos) serve para escrever o sinal de atribuição mais rápido.
+
+- O sinal `=` também funciona  neste caso: não use :)
+
+- Aproveite para usar a tecla Tab no RStudio: ajuda a autocompletar!
+
+- O R é *case sensitive*:
+
+
+
+```r
+r_rocks &lt;- 2 ^ 3
+```
+
+
+```r
+r_rock
+#&gt; Error: object 'r_rock' not found
+R_rocks
+#&gt; Error: object 'R_rocks' not found
+r_rocks
+#&gt; [1] 8
+```
+
+- Erros de digitação e de maiúscula/minúscula importam!
+
+---
+### Boas práticas e objetos
+
+- Cuidado ao dar nomes aos objetos:
+
+
+```r
+eu_uso_snake_case
+outrasPessoasUsamCamelCase
+algumas.pessoas.usam.pontos
+E_Algumas.Pessoas_RENUNCIAMconvenções
+```
+
+
+- O [tidyverse style guide](https://style.tidyverse.org/) usa snake case.
+
+---
+
+### Utilizando funções
+
+- O R possui muitas funções disponíveis
+
+- Estrutura para utilizar uma função:
+
+
+```r
+nome_da_funcao(nome_do_argumento_1 = valor_para_o_argumento1,
+               nome_do_argumento_2 = valor_para_o_argumento2,
+               nome_do_argumento_3 = valor_para_o_argumento3,
+               ...)
+```
+
+Exemplo:
+
+
+```r
+seq(from = 1, to = 10)
+```
+
+```
+##  [1]  1  2  3  4  5  6  7  8  9 10
+```
+
+- Parênteses (e aspas) sempre devem estar em "duplas": se abrirmos, temos que fechar. 
+
+---
+class: middle, center, inverse
+
+## Workflow: Scripts
+
+---
+### Scripts
+
+.pull-left[
+&lt;img src="https://r4ds.hadley.nz/diagrams/rstudio-editor.png" width="100%" style="display: block; margin: auto;" /&gt;
+]
+
+.pull-right[
+
+- Podemos salvar nossos scripts para utilizar depois! 
+
+- Considere tudo no console como temporário, pois não salvamos o conteúdo.
+
+- Escreva no Script/Editor os códigos importantes para a análise.
+]
+
+---
+
+### Executando códigos
+
+- O atalho  `Cmd/Ctrl + Enter` é um dos mais úteis! Executa o código selecionado, ou o trecho de código onde o cursor está.
+
+- O atalho `Cmd/Ctrl + Shift + S` executa todos os códigos do script!
+
+- Recomendado escrever os códigos para carregar pacotes (`library()`) no início do código da análise 
+
+Autores:
+
+&gt; "Note, however, that you should never include `install.packages()` or `setwd()` in a script that you share. It’s very antisocial to change settings on someone else’s computer!"
+
+
+---
+class: middle, center, inverse
+
+## Workflow: Projects
+
+---
+### O que é "real"?
+
+- O que você salvaria como o último registro do que aconteceu na análise?
+
+- Onde a nossa análise "vive"? 
+
+--
+
+- Scripts x Environment
+  - É muito mais fácil recriar os objetos do Environment a partir dos códigos que escrevemos no script do que o contrário.
+  
+---
+### Boas práticas
+
+.pull-left[
+Configure o RStudio para não salvar o workspace entre as sessões:
+
+Tools &gt; Global Options &gt;  ...
+
+&lt;img src="https://r4ds.hadley.nz/screenshots/rstudio-workspace.png" width="70%" style="display: block; margin: auto;" /&gt;
+
+
+]
+
+.pull-right[
+
+- Ao reiniciar o RStudio e a sessão do R, o Workspace será limpo. 
+
+- Isso nos obriga a registrar todas as etapas importantes no código.
+
+Recomendo a leitura: [Capítulo .RData e .Rhistory, livro Zen do R](https://curso-r.github.io/zen-do-r/rdata-rhistory.html)
+
+
+]
+
+---
+
+### Onde as análises vivem?
+
+- **Working directory/diretório de trabalho**: é o lugar (uma pasta no computador) onde o R irá procurar pelos arquivos quando queremos importá-los, ou onde ele irá salvar os arquivos quando queremos exportá-los.
+
+--
+
+Como saber qual é o diretório de trabalho atual?
+
+- Olhando o console;
+
+- Usando a função `getwd()`:
+
+
+```r
+getwd() # para saber qual é o diretório de trabalho
+```
+
+```
+## [1] "/Users/beatrizmilz/GitHub/grupo_de_estudos/"
+```
+
+
+Também existe a função `setwd()` para mudar o diretório de trabalho, mas isso **não é recomendado**!
+
+---
+### Caminhos
+
+- **Caminhos absolutos** vs **Caminhos relativos**
+
+- Caminhos absolutos são caminhos que apontam para o mesmo lugar independente do diretório de trabalho. 
+
+- Caminhos relativos são caminhos que partem do diretório de trabalho.
+
+---
+
+### Exemplo
+
+Caminhos até o arquivo [`index.html` desta apresentação](https://github.com/R-Ladies-Sao-Paulo/grupo_de_estudos/blob/main/r4ds/02-workflow/index.html)
+
+- Caminho absoluto:
+```
+"~/GitHub/grupo_de_estudos/r4ds/02-workflow/index.html"
+```
+
+
+- Caminho relativo:
+```
+"r4ds/02-workflow/index.html"
+```
+
+&gt; "You should **never** use absolute paths in your scripts, because they hinder sharing: no one else will have exactly the same directory configuration as you." 
+
+
+&gt; "Você **nunca** deve usar caminhos absolutos em seus scripts, porque eles dificultam o compartilhamento: ninguém mais terá exatamente a mesma configuração de diretório que você."
+
+---
+### Projetos do RStudio
+
+.pull-left[
+- O projeto é um local (uma pasta no nosso computador) onde teremos todos os arquivos necessários para nossa análise:
+  - Dados utilizados
+  - Scripts em R
+  - Figuras
+  - Resultados de análises
+  - Entre outros
+
+- Quando usamos projetos do RStudio, o nosso diretório de trabalho é a pasta do projeto. 
+]
+
+.pull-right[
+
+
+- Crie um projeto do RStudio `.RProj` para cada novo projeto de análise de dados;
+
+- Sempre use caminhos relativos;
+
+- Recomendação de leitura: [Capítulo Rproj e diretórios - Livro Zen do R](https://curso-r.github.io/zen-do-r/rproj-dir.html)
+]
+
+---
+
+### Criando um projeto
+
+.pull-left[
+&lt;img src="https://r4ds.hadley.nz/screenshots/rstudio-project-1.png" width="70%" style="display: block; margin: auto;" /&gt;&lt;img src="https://r4ds.hadley.nz/screenshots/rstudio-project-2.png" width="70%" style="display: block; margin: auto;" /&gt;
+]
+
+.pull-right[
+
+&lt;img src="https://r4ds.hadley.nz/screenshots/rstudio-project-3.png" width="70%" style="display: block; margin: auto;" /&gt;
+]
+
+---
+class: middle, center, inverse
+
+### Demonstração no R
+
+Usando o pacote dados: https://cienciadedatos.github.io/dados/ 
+
+&lt;img src="https://media.giphy.com/media/VbnUQpnihPSIgIXuZv/giphy-downsized.gif" width="30%" style="display: block; margin: auto;" /&gt;
+
+???
+- Criar um projeto
+
+- Mostrar a função getwd()
+
+
+
+---
+class: middle, center, inverse
+
+## Extra
+
+---
+
+### Estilo de escrita
+
+O que é melhor para ler?
+
+- Opção 1:
+
+
+```r
+library(tidyverse)
+library(dados)
+diamante %&gt;% filter(corte == "Bom") %&gt;% ggplot() + geom_boxplot(aes(transparencia, preco, fill = transparencia))
+```
+
+- Opção 2:
+
+
+```r
+library(tidyverse)
+library(dados)
+diamante %&gt;%
+  filter(corte == "Bom") %&gt;%
+  ggplot() +
+  geom_boxplot(aes(transparencia, preco, fill = transparencia))
+```
+
+---
+
+### Como manter/checar o estilo de escrita?
+
+- Atalho `Ctrl + Shift + A`
+
+- Melhor ainda: pacote [`styler`](https://styler.r-lib.org/) - formata de acordo com o [tidyverse style guide](https://style.tidyverse.org/)
+
+
+&lt;img src="https://raw.githubusercontent.com/lorenzwalthert/some_raw_data/master/styler_0.1.gif" width="50%" style="display: block; margin: auto;" /&gt;
+
+---
+
+### E se você quer experimentar mais..
+
+- Pacote [`lintr`](https://github.com/jimhester/lintr)
+
+&lt;img src="https://camo.githubusercontent.com/454e2d641d7982415eac9cbb4ebb546cb9b2664490e1d7da8568bc92511f8de1/687474703a2f2f692e696d6775722e636f6d2f50494b6e70626e2e706e67" width="50%" style="display: block; margin: auto;" /&gt;
+
+
+---
+class: middle, center
+
+## Obrigada!
+
+E se você gosta desse assunto, recomendo também o livro [Zen do R](https://curso-r.github.io/zen-do-r/index.html):
+
+[
+&lt;img src="https://curso-r.github.io/zen-do-r/assets/hex.png" width="30%" style="display: block; margin: auto;" /&gt;
+](https://curso-r.github.io/zen-do-r/index.html)
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"slideNumberFormat": "%current%",
+"highlightStyle": "github",
+"highlightLines": true,
+"ratio": "16:9",
+"countIncrementalSlides": true
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

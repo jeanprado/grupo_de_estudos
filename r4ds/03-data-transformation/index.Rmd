@@ -1,0 +1,466 @@
+---
+title: "Transformação de Dados"
+subtitle: "Capítulo 5 - R para Ciência de Dados"  
+author: 
+  - "Angélica Custódio e Jean Prado"
+  - "Grupo de Estudos - R-Ladies São Paulo"
+date: '4 de agosto de 2021'
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    nature:
+      slideNumberFormat: "%current%"
+      highlightStyle: github
+      highlightLines: true
+      ratio: 16:9
+      countIncrementalSlides: true
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(
+  fig.width=9, fig.height=3.5, fig.retina=3,
+  out.width = "100%",
+  fig.align = "center",
+  cache = FALSE,
+  echo = TRUE,
+  message = FALSE, 
+  warning = FALSE,
+  fig.show = TRUE,
+  hiline = TRUE
+)
+```
+
+```{css echo=FALSE}
+.remark-slide-content{
+  font-size: 1.2rem;
+}
+```
+
+```{r xaringan-themer, include=FALSE, warning=FALSE}
+# library(xaringanthemer)
+# style_duo_accent(
+#   primary_color = "#88398a",
+#   secondary_color = "#9c6fb6",
+#   inverse_header_color = "#FFFFFF"
+# )
+```
+
+## Referência
+
+.pull-left[
+
+```{r echo=FALSE, out.width="60%"}
+knitr::include_graphics("https://r4ds.hadley.nz/cover.png")
+```
+
+]
+
+.pull-right[
+
+- Livro: [R para Ciência de Dados](https://r4ds.had.co.nz/index.html)
+
+- Capítulo: [Data Transformation](https://r4ds.had.co.nz/transform.html), incluindo os verbos principais do dplyr, como:
+  - `filter()`
+  - `arrange()`
+  - `select()`
+  - `mutate()`
+  - `group_by()`
+  - `summarise()`
+  
+]
+
+---
+class: middle, center, inverse
+
+## Introdução
+
+
+---
+
+### R como uma calculadora
+
+- Podemos usar o R como uma calculadora:
+
+
+```{r}
+1 / 200 * 30
+(59 + 73 + 2) / 3
+sin(pi / 2)
+```
+
+---
+
+### Criando objetos
+
+- Podemos criar objetos (e guardar resultados) usando o operador de atribuição `<-`, e a estrutura a seguir:
+
+```
+nome_do_objeto <- valor
+```
+.pull-left[
+Exemplo:
+
+```{r}
+x <- 3 * 4
+```
+
+Podemos ver o conteúdo do objeto escrevendo o nome e executando:
+
+```{r}
+x
+```
+
+]
+
+.pull-right[
+Outra opção é criar o objeto e envolvê-lo com parênteses:
+
+```{r}
+(y <- 3 * 4)
+```
+]
+
+---
+
+### Boas práticas e objetos
+
+- Atalho `Alt -` (Alt e menos) serve para escrever o sinal de atribuição mais rápido.
+
+- O sinal `=` também funciona  neste caso: não use :)
+
+- Aproveite para usar a tecla Tab no RStudio: ajuda a autocompletar!
+
+- O R é *case sensitive*:
+
+
+```{r}
+r_rocks <- 2 ^ 3
+```
+
+```{r eval=FALSE, include=TRUE}
+r_rock
+#> Error: object 'r_rock' not found
+R_rocks
+#> Error: object 'R_rocks' not found
+r_rocks
+#> [1] 8
+```
+
+- Erros de digitação e de maiúscula/minúscula importam!
+
+---
+### Boas práticas e objetos
+
+- Cuidado ao dar nomes aos objetos:
+
+```{r eval=FALSE, include=TRUE}
+eu_uso_snake_case
+outrasPessoasUsamCamelCase
+algumas.pessoas.usam.pontos
+E_Algumas.Pessoas_RENUNCIAMconvenções
+```
+
+
+- O [tidyverse style guide](https://style.tidyverse.org/) usa snake case.
+
+---
+
+### Utilizando funções
+
+- O R possui muitas funções disponíveis
+
+- Estrutura para utilizar uma função:
+
+```{r eval=FALSE, include=TRUE}
+nome_da_funcao(nome_do_argumento_1 = valor_para_o_argumento1,
+               nome_do_argumento_2 = valor_para_o_argumento2,
+               nome_do_argumento_3 = valor_para_o_argumento3,
+               ...)
+```
+
+Exemplo:
+
+```{r}
+seq(from = 1, to = 10)
+```
+
+- Parênteses (e aspas) sempre devem estar em "duplas": se abrirmos, temos que fechar. 
+
+---
+class: middle, center, inverse
+
+## Workflow: Scripts
+
+---
+### Scripts
+
+.pull-left[
+```{r echo=FALSE, out.width="100%"}
+knitr::include_graphics("https://r4ds.hadley.nz/diagrams/rstudio-editor.png")
+```
+]
+
+.pull-right[
+
+- Podemos salvar nossos scripts para utilizar depois! 
+
+- Considere tudo no console como temporário, pois não salvamos o conteúdo.
+
+- Escreva no Script/Editor os códigos importantes para a análise.
+]
+
+---
+
+### Executando códigos
+
+- O atalho  `Cmd/Ctrl + Enter` é um dos mais úteis! Executa o código selecionado, ou o trecho de código onde o cursor está.
+
+- O atalho `Cmd/Ctrl + Shift + S` executa todos os códigos do script!
+
+- Recomendado escrever os códigos para carregar pacotes (`library()`) no início do código da análise 
+
+Autores:
+
+> "Note, however, that you should never include `install.packages()` or `setwd()` in a script that you share. It’s very antisocial to change settings on someone else’s computer!"
+
+
+---
+class: middle, center, inverse
+
+## Workflow: Projects
+
+---
+### O que é "real"?
+
+- O que você salvaria como o último registro do que aconteceu na análise?
+
+- Onde a nossa análise "vive"? 
+
+--
+
+- Scripts x Environment
+  - É muito mais fácil recriar os objetos do Environment a partir dos códigos que escrevemos no script do que o contrário.
+  
+---
+### Boas práticas
+
+.pull-left[
+Configure o RStudio para não salvar o workspace entre as sessões:
+
+Tools > Global Options >  ...
+
+```{r echo=FALSE, out.width="70%"}
+knitr::include_graphics("https://r4ds.hadley.nz/screenshots/rstudio-workspace.png")
+```
+
+
+]
+
+.pull-right[
+
+- Ao reiniciar o RStudio e a sessão do R, o Workspace será limpo. 
+
+- Isso nos obriga a registrar todas as etapas importantes no código.
+
+Recomendo a leitura: [Capítulo .RData e .Rhistory, livro Zen do R](https://curso-r.github.io/zen-do-r/rdata-rhistory.html)
+
+
+]
+
+---
+
+### Onde as análises vivem?
+
+- **Working directory/diretório de trabalho**: é o lugar (uma pasta no computador) onde o R irá procurar pelos arquivos quando queremos importá-los, ou onde ele irá salvar os arquivos quando queremos exportá-los.
+
+--
+
+Como saber qual é o diretório de trabalho atual?
+
+- Olhando o console;
+
+- Usando a função `getwd()`:
+
+```{r eval=FALSE, include=TRUE}
+getwd() # para saber qual é o diretório de trabalho
+```
+
+```
+## [1] "/Users/beatrizmilz/GitHub/grupo_de_estudos/"
+```
+
+
+Também existe a função `setwd()` para mudar o diretório de trabalho, mas isso **não é recomendado**!
+
+---
+### Caminhos
+
+- **Caminhos absolutos** vs **Caminhos relativos**
+
+- Caminhos absolutos são caminhos que apontam para o mesmo lugar independente do diretório de trabalho. 
+
+- Caminhos relativos são caminhos que partem do diretório de trabalho.
+
+---
+
+### Exemplo
+
+Caminhos até o arquivo [`index.html` desta apresentação](https://github.com/R-Ladies-Sao-Paulo/grupo_de_estudos/blob/main/r4ds/02-workflow/index.html)
+
+- Caminho absoluto:
+```
+"~/GitHub/grupo_de_estudos/r4ds/02-workflow/index.html"
+```
+
+
+- Caminho relativo:
+```
+"r4ds/02-workflow/index.html"
+```
+
+> "You should **never** use absolute paths in your scripts, because they hinder sharing: no one else will have exactly the same directory configuration as you." 
+
+
+> "Você **nunca** deve usar caminhos absolutos em seus scripts, porque eles dificultam o compartilhamento: ninguém mais terá exatamente a mesma configuração de diretório que você."
+
+---
+### Projetos do RStudio
+
+.pull-left[
+- O projeto é um local (uma pasta no nosso computador) onde teremos todos os arquivos necessários para nossa análise:
+  - Dados utilizados
+  - Scripts em R
+  - Figuras
+  - Resultados de análises
+  - Entre outros
+
+- Quando usamos projetos do RStudio, o nosso diretório de trabalho é a pasta do projeto. 
+]
+
+.pull-right[
+
+
+- Crie um projeto do RStudio `.RProj` para cada novo projeto de análise de dados;
+
+- Sempre use caminhos relativos;
+
+- Recomendação de leitura: [Capítulo Rproj e diretórios - Livro Zen do R](https://curso-r.github.io/zen-do-r/rproj-dir.html)
+]
+
+---
+
+### Criando um projeto
+
+.pull-left[
+```{r echo=FALSE, out.width="70%"}
+knitr::include_graphics("https://r4ds.hadley.nz/screenshots/rstudio-project-1.png")
+
+knitr::include_graphics("https://r4ds.hadley.nz/screenshots/rstudio-project-2.png")
+```
+]
+
+.pull-right[
+
+```{r echo=FALSE, out.width="70%"}
+knitr::include_graphics("https://r4ds.hadley.nz/screenshots/rstudio-project-3.png")
+```
+]
+
+---
+class: middle, center, inverse
+
+### Demonstração no R
+
+Usando o pacote dados: https://cienciadedatos.github.io/dados/ 
+
+```{r echo=FALSE, out.width="30%"}
+knitr::include_graphics("https://media.giphy.com/media/VbnUQpnihPSIgIXuZv/giphy-downsized.gif")
+```
+
+???
+- Criar um projeto
+
+- Mostrar a função getwd()
+
+```{r eval=FALSE, include=FALSE}
+library(tidyverse)
+library(dados)
+diamante %>%
+  filter(corte == "Bom") %>%
+  ggplot() +
+  geom_boxplot(aes(transparencia, preco, fill = transparencia)) +
+  theme(legend.position = "none") +
+  labs(title = "Diamantes", subtitle = "Preço e transparência", y = "Preço", x = "Transparência") + 
+  theme_bw() +
+  ggsave(filename = "diamantes.png")
+
+write_csv2(diamante, "diamante.csv")
+```
+
+---
+class: middle, center, inverse
+
+## Extra
+
+---
+
+### Estilo de escrita
+
+O que é melhor para ler?
+
+- Opção 1:
+
+```{r eval=FALSE, include=TRUE}
+library(tidyverse)
+library(dados)
+diamante %>% filter(corte == "Bom") %>% ggplot() + geom_boxplot(aes(transparencia, preco, fill = transparencia))
+```
+
+- Opção 2:
+
+```{r eval=FALSE, include=TRUE}
+library(tidyverse)
+library(dados)
+diamante %>%
+  filter(corte == "Bom") %>%
+  ggplot() +
+  geom_boxplot(aes(transparencia, preco, fill = transparencia))
+```
+
+---
+
+### Como manter/checar o estilo de escrita?
+
+- Atalho `Ctrl + Shift + A`
+
+- Melhor ainda: pacote [`styler`](https://styler.r-lib.org/) - formata de acordo com o [tidyverse style guide](https://style.tidyverse.org/)
+
+
+```{r echo=FALSE, out.width="50%"}
+knitr::include_graphics("https://raw.githubusercontent.com/lorenzwalthert/some_raw_data/master/styler_0.1.gif")
+```
+
+---
+
+### E se você quer experimentar mais..
+
+- Pacote [`lintr`](https://github.com/jimhester/lintr)
+
+```{r echo=FALSE, out.width="50%"}
+knitr::include_graphics("https://camo.githubusercontent.com/454e2d641d7982415eac9cbb4ebb546cb9b2664490e1d7da8568bc92511f8de1/687474703a2f2f692e696d6775722e636f6d2f50494b6e70626e2e706e67")
+```
+
+
+---
+class: middle, center
+
+## Obrigada!
+
+E se você gosta desse assunto, recomendo também o livro [Zen do R](https://curso-r.github.io/zen-do-r/index.html):
+
+[
+```{r echo=FALSE, out.width="30%"}
+knitr::include_graphics("https://curso-r.github.io/zen-do-r/assets/hex.png")
+```
+](https://curso-r.github.io/zen-do-r/index.html)
